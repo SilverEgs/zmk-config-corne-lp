@@ -47,12 +47,13 @@
 
         // ── Layer 3: Adjust (BT profiles + output) ────────────────
         //   Reached by holding both Lower + Raise simultaneously
+        //   &bootloader in top corners to enter flashing mode
         adjust_layer {
             bindings = <
-    &none &none &none &none &none &none          &none        &none        &none        &none &none &none
-    &none &none &none &none &none &none          &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &none &none &none
-    &none &none &none &none &none &bt BT_CLR     &out OUT_USB &out OUT_BLE &none        &none &none &none
-                       &none &trans &none        &none &trans &none
+    &bootloader &none &none &none &none &none     &none        &none        &none        &none &none &bootloader
+    &none &none &none &none &none &none           &bt BT_SEL 0 &bt BT_SEL 1 &bt BT_SEL 2 &none &none &none
+    &none &none &none &none &none &bt BT_CLR      &out OUT_USB &out OUT_BLE &none        &none &none &none
+                       &none &trans &none         &none &trans &none
             >;
         };
     };
