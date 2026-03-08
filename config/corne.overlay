@@ -1,0 +1,104 @@
+#include <dt-bindings/led/led.h>
+
+/*
+ * Boardsource Corne v3.6 hardware overlay
+ *
+ * Per-key LEDs:  21x SK6812MINI-E per half (backlight, data flows through underglow first)
+ * Underglow LEDs: 6x WS2812B per half
+ * Total chain:   27 LEDs per half
+ *
+ * The SK6812MINI-E uses RGBW color order but ZMK drives it as RGB (white channel unused).
+ * Using LED_COLOR_ID_GREEN/RED/BLUE mapping matches the WS2812B GRB order at the start
+ * of the chain; the SK6812MINI-E will follow correctly as data passes through.
+ *
+ * I2C pins (OLED):  SDA=P0.17, SCL=P0.20  (nice!nano v2 standard)
+ * SPI pin  (LEDs):  MOSI=P0.08            (Corne v3 standard data line)
+ */
+
+&pinctrl {
+    /* ── I2C for OLED ── */
+    i2c0_default: i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 17)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 20)>;
+        };
+    };
+    i2c0_sleep: i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 17)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 20)>;
+            low-power-enable;
+        };
+    };
+
+    /* ── SPI for LED strip ── */
+    spi3_default: spi3_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 0, 8)>;
+        };
+    };
+    spi3_sleep: spi3_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 0, 8)>;
+            low-power-enable;
+        };
+    };
+};
+
+/* ── OLED (SSD1306 128x32 via I2C) ───────────────────────────*/
+&i2c0 {
+    status = "okay";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    oled: ssd1306@3c {
+        compatible = "solomon,ssd1306fb";
+        reg = <0x3c>;
+        width = <128>;
+        height = <32>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <31>;
+        segment-remap;
+        com-invdir;
+        com-sequential;
+        inversion-on;
+        prechargep = <0x22>;
+    };
+};
+
+/* ── RGB LED strip ─────────────────────────────────────────────
+ * DISABLED: WS2812B underglow LEDs not yet installed.
+ * Uncomment this entire block once WS2812B LEDs are soldered,
+ * and re-enable RGB settings in corne.conf at the same time.
+ *
+ * &spi3 {
+ *     compatible = "nordic,nrf-spim";
+ *     status = "okay";
+ *     pinctrl-0 = <&spi3_default>;
+ *     pinctrl-1 = <&spi3_sleep>;
+ *     pinctrl-names = "default", "sleep";
+ *
+ *     led_strip: ws2812@0 {
+ *         compatible = "worldsemi,ws2812-spi";
+ *         reg = <0>;
+ *         spi-max-frequency = <4000000>;
+ *         chain-length = <27>;
+ *         spi-one-frame = <0x70>;
+ *         spi-zero-frame = <0x40>;
+ *         color-mapping = <LED_COLOR_ID_GREEN
+ *                          LED_COLOR_ID_RED
+ *                          LED_COLOR_ID_BLUE>;
+ *     };
+ * };
+ */
+
+/* ── Chosen peripherals ───────────────────────────────────────*/
+/ {
+    chosen {
+        /* zmk,underglow = &led_strip; */  /* uncomment when WS2812B LEDs are installed */
+        zephyr,display = &oled;
+    };
+};
