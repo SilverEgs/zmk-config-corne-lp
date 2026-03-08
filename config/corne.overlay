@@ -45,7 +45,7 @@
     };
 };
 
-/* ── OLED (SSD1306 128x32 via I2C) ───────────────────────────*/
+/* ── OLED (SSD1306 32x128 vertical via I2C) ───────────────────*/
 &i2c0 {
     status = "okay";
     pinctrl-0 = <&i2c0_default>;
@@ -55,14 +55,13 @@
     oled: ssd1306@3c {
         compatible = "solomon,ssd1306fb";
         reg = <0x3c>;
-        width = <128>;
-        height = <32>;
+        width = <32>;
+        height = <128>;
         segment-offset = <0>;
         page-offset = <0>;
         display-offset = <0>;
-        multiplex-ratio = <31>;
-        segment-remap;
-        com-invdir;
+        multiplex-ratio = <127>;
+        /* Vertical orientation — remove segment-remap and com-invdir */
         com-sequential;
         inversion-on;
         prechargep = <0x22>;
