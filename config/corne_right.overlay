@@ -12,6 +12,8 @@
  * SK6812MINI-E LEDs downstream follow correctly.
  */
 
+#include <dt-bindings/led/led.h>
+
 &pinctrl {
     /* ── SPI for LED strip ── */
     spi3_default: spi3_default {
