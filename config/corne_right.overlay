@@ -1,0 +1,59 @@
+/*
+ * corne_right.overlay — right half only
+ *
+ * Configures the RGB LED strip via SPI.
+ * This overlay is NOT applied to the left half since LEDs
+ * are only installed on the right.
+ *
+ * LED chain:  6x WS2812B (underglow) + 21x SK6812MINI-E (per-key) = 27 total
+ * SPI pin (Corne v3 standard LED data line): MOSI=P0.08
+ *
+ * Color order: GRB — matches WS2812B at the head of the chain;
+ * SK6812MINI-E LEDs downstream follow correctly.
+ */
+
+&pinctrl {
+    /* ── SPI for LED strip ── */
+    spi3_default: spi3_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 0, 8)>;
+        };
+    };
+    spi3_sleep: spi3_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 0, 8)>;
+            low-power-enable;
+        };
+    };
+};
+
+/* ── RGB LED Strip ────────────────────────────────────────────*/
+&spi3 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+    pinctrl-0 = <&spi3_default>;
+    pinctrl-1 = <&spi3_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-spi";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+
+        chain-length = <27>; /* 6 underglow + 21 per-key */
+
+        spi-one-frame = <0x70>;
+        spi-zero-frame = <0x40>;
+
+        color-mapping = <LED_COLOR_ID_GREEN
+                         LED_COLOR_ID_RED
+                         LED_COLOR_ID_BLUE>;
+    };
+};
+
+/* ── Chosen peripherals ───────────────────────────────────────*/
+/ {
+    chosen {
+        zmk,underglow = &led_strip;
+    };
+};
