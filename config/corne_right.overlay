@@ -1,20 +1,32 @@
 /*
  * corne_right.overlay — right half only
  *
- * Configures the RGB LED strip via SPI.
- * This overlay is NOT applied to the left half since LEDs
- * are only installed on the right.
+ * Contains both OLED and RGB LED config.
+ * NOTE: ZMK does not load a shared corne.overlay from the config dir —
+ * only shield-named overlays are picked up, so everything lives here.
  *
- * LED chain:  6x WS2812B (underglow) + 21x SK6812MINI-E (per-key) = 27 total
- * SPI pin (Corne v3 standard LED data line): MOSI=P0.08
- *
- * Color order: GRB — matches WS2812B at the head of the chain;
- * SK6812MINI-E LEDs downstream follow correctly.
+ * OLED:  SSD1306 128x32 via I2C  — SDA=P0.17, SCL=P0.20
+ * LEDs:  6x WS2812B (underglow) + 21x SK6812MINI-E (per-key) via SPI — MOSI=P0.08
  */
 
 #include <dt-bindings/led/led.h>
 
 &pinctrl {
+    /* ── I2C for OLED ── */
+    i2c0_default: i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 17)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 20)>;
+        };
+    };
+    i2c0_sleep: i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 0, 17)>,
+                    <NRF_PSEL(TWIM_SCL, 0, 20)>;
+            low-power-enable;
+        };
+    };
+
     /* ── SPI for LED strip ── */
     spi3_default: spi3_default {
         group1 {
@@ -26,6 +38,30 @@
             psels = <NRF_PSEL(SPIM_MOSI, 0, 8)>;
             low-power-enable;
         };
+    };
+};
+
+/* ── OLED (SSD1306 128x32 via I2C) ───────────────────────────*/
+&i2c0 {
+    status = "okay";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    oled: ssd1306@3c {
+        compatible = "solomon,ssd1306fb";
+        reg = <0x3c>;
+        width = <128>;
+        height = <32>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <31>;
+        segment-remap;
+        com-invdir;
+        com-sequential;
+        inversion-on;
+        prechargep = <0x22>;
     };
 };
 
@@ -57,5 +93,6 @@
 / {
     chosen {
         zmk,underglow = &led_strip;
+        zephyr,display = &oled;
     };
 };
